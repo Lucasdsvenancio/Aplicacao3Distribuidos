@@ -5,9 +5,89 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSE Client</title>
+    <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="./listener.js"></script>
+    <style>
+        div {
+            width: 300px;
+            border: 8px solid green;
+            padding: 5px;
+            margin: 10px;   
+            vertical-align: top;
+            display: inline-block;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        body {
+            text-align: center;
+        }   
+        form{
+            display: inline-block;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            padding: 5px;
+        }
+        label{
+            display: block;
+        }
+        button{
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div id="messages"></div>
-    <script src="./listener.js"></script>
+    
+    <div id="user_register">
+        <p>Cadastro cliente</p>
+        <form id="cliente">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <button onclick="request_f('/cadastro_cliente?', 'POST', 'cliente')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="comp_register">
+        <p>Cadastro compromisso</p>
+        <form id="compromisso">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <label>Nome Evento</label><input type="text" name="nome_evento" id="nome_evento" value="teste">
+            <label>Data</label><input type="text" name="data" id="data" value="29/11/2022 12:00">
+            <label>Alerta</label><input type="text" name="alerta" id="alerta" value="4">
+            <label>Alertado</label><input type="text" name="alertado" id="alertado" value="0">
+            <button onclick="request_f('/cadastro_compromisso?', 'POST', 'compromisso')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="comp_cancel">
+        <p>Cancelar compromisso</p>
+        <form id="cancel">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <label>Nome Evento</label><input type="text" name="nome_evento" id="nome_evento" value="teste">
+            <button onclick="request_f('/cancelar_compromisso?', 'POST', 'cancel')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="alert_cancel">
+        <p>Cancelar alerta</p>
+        <form id="cancel_alerta">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <label>Nome Evento</label><input type="text" name="nome_evento" id="nome_evento" value="teste">
+            <button onclick="request_f('/cancelar_alerta?', 'POST', 'cancel_alerta')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="consulta_comp">
+        <p>Consultar compromissos</p>
+        <form id="consulta">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <button onclick="request_f('/consultar_compromissos?', 'GET', 'consulta')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="messages">
+        <form id="consulta">
+            <label>Nome</label><input type="text" name="nome" id="stream_nome" value="teste">
+            <button onclick="stream_message()" type="button">Submit</button>
+        </form>
+        <p>Mensagens de stream</p>
+    </div>
+    
 </body>
 </html>

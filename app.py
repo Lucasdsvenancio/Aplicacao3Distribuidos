@@ -17,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-STREAM_DELAY = 1
+STREAM_DELAY = 5
 RETRY_TIMEOUT = 1000
 
 clientes = [
@@ -36,18 +36,18 @@ class Cliente(BaseModel):
 @app.post('/cadastro_cliente')
 def cadastro_cliente(nome: str):
     clientes.append(Cliente(nome=nome))
-
     return {"cliente adicionado": clientes[-1]}
 
-@app.post('/{nome}/cadastro_compromisso')
-def cadastro_compromisso(nome: str, comp: Compromisso):
+@app.post('/cadastro_compromisso')
+def cadastro_compromisso(nome: str, nome_evento: str, data: str, alerta: str, alertado: str):
+    comp = Compromisso(nome_evento=nome_evento, data=data, alerta=int(alerta), alertado=int(alertado))
     for c in clientes:
         if c.nome == nome:
             c.compromissos.append(comp)
             return {"compromisso adicionado": c.compromissos[-1]}
     return {'cliente não encontrado'}
 
-@app.post("/{nome}/{nome_evento}/cancelar_compromisso")
+@app.post("/cancelar_compromisso")
 def cancelar_compromisso(nome: str, nome_evento: str):
     for c in clientes:
         if c.nome == nome:
@@ -58,7 +58,7 @@ def cancelar_compromisso(nome: str, nome_evento: str):
             return {"nenhum compromisso encontrado"}
     return {"nenhum cliente encontrado"}
                     
-@app.post("/{nome}/{nome_evento}/cancelar_alerta")
+@app.post("/cancelar_alerta")
 def cancelar_alerta(nome: str, nome_evento: str):
     for c in clientes:
         if c.nome == nome:
@@ -69,7 +69,7 @@ def cancelar_alerta(nome: str, nome_evento: str):
             return {"nenhum compromisso encontrado"}
     return {"nenhum cliente encontrado"}
 
-@app.get("/{nome}/consultar_compromissos")
+@app.get("/consultar_compromissos")
 def consultar_compromisso(nome : str):
     for c in clientes:
         if c.nome == nome:
@@ -98,10 +98,17 @@ async def message_stream(nome: str, request: Request):
             c, new = new_messages()
             if new:
                 yield {
-                        "event": "new_message",
+                        "event": "stream_message",
                         "id": "message_id",
                         "retry": RETRY_TIMEOUT,
                         "data": f"Voce tem um compromisso daqui {c.alerta} minutos"
+                }
+            else:
+                yield {
+                        "event": "stream_message",
+                        "id": "message_id",
+                        "retry": RETRY_TIMEOUT,
+                        "data": f"Nenhum alerta"
                 }
 
             await asyncio.sleep(STREAM_DELAY)
