@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 from datetime import date, datetime
-import uvicorn, asyncio, requests
+import asyncio, requests
 
 app = FastAPI()
 
@@ -28,10 +28,12 @@ class Compromisso(BaseModel):
     data: str
     alerta: int
     alertado: int
+    convidados: list = []
 
 class Cliente(BaseModel):
     nome: str = ''
     compromissos: list = []
+    convites: list=[]
 
 @app.post('/cadastro_cliente')
 def cadastro_cliente(nome: str):
@@ -39,12 +41,16 @@ def cadastro_cliente(nome: str):
     return {"cliente adicionado": clientes[-1]}
 
 @app.post('/cadastro_compromisso')
-def cadastro_compromisso(nome: str, nome_evento: str, data: str, alerta: str, alertado: str):
-    comp = Compromisso(nome_evento=nome_evento, data=data, alerta=int(alerta), alertado=int(alertado))
+def cadastro_compromisso(nome: str, nome_evento: str, data: str, alerta: str, alertado: str, convidados: str):
+    comp = Compromisso(nome_evento=nome_evento, data=data, alerta=int(alerta), alertado=int(alertado), convidados=convidados.split(", "))
     for c in clientes:
         if c.nome == nome:
             c.compromissos.append(comp)
-            return {"compromisso adicionado": c.compromissos[-1]}
+            yield {"compromisso adicionado": c.compromissos[-1]}
+        for convi in comp.convidados:
+            if c.nome == convi:
+                c.convites.append(comp)
+                yield {"convite adicionado": c.convites[-1]}
     return {'cliente não encontrado'}
 
 @app.post("/cancelar_compromisso")
@@ -74,7 +80,25 @@ def consultar_compromisso(nome : str):
     for c in clientes:
         if c.nome == nome:
             return {f"lista de compromissos de {nome}": c.compromissos}
+
+@app.get("/consultar_convites")
+def consultar_convite(nome : str):
+    for c in clientes:
+        if c.nome == nome:
+            return {f"lista de convites de {nome}": c.convites}
             
+
+@app.post("/aceitar_convite")
+def aceitar_convite(nome: str, nome_evento: str):
+    for c in clientes:
+        if c.nome == nome:
+            for cm in c.convites:
+                if cm.nome_evento == nome_evento:
+                    c.compromissos.append(cm)
+                    c.convites.remove(cm)
+                    return {f"convite {cm.nome_evento} foi aceito"}
+            return {"nenhum compromisso encontrado"}
+    return {"nenhum cliente encontrado"}
         
 @app.get("/{nome}/stream")
 async def message_stream(nome: str, request: Request):
@@ -102,13 +126,6 @@ async def message_stream(nome: str, request: Request):
                         "id": "message_id",
                         "retry": RETRY_TIMEOUT,
                         "data": f"Voce tem um compromisso daqui {c.alerta} minutos"
-                }
-            else:
-                yield {
-                        "event": "stream_message",
-                        "id": "message_id",
-                        "retry": RETRY_TIMEOUT,
-                        "data": f"Nenhum alerta"
                 }
 
             await asyncio.sleep(STREAM_DELAY)

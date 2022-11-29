@@ -1,6 +1,4 @@
 var base_url = 'http://localhost:8000'
-var stream = document.getElementById('stream_nome')
-const eventSource = new EventSource(base_url+'/'+stream+'/stream')
 
 function updateMessage(id, message){
     const list = document.getElementById(id)
@@ -22,7 +20,7 @@ function request_f(request_url, type, formid){
 
 function stream_message(){
     var nome = document.getElementById('stream_nome')
-    const eventSource = new EventSource(base_url+'/'+nome+'/stream')
+    const eventSource = new EventSource(base_url+'/'+nome.value+'/stream')
     eventSource.addEventListener('stream_message', function(e){
         updateMessage('messages', e.data)
     })

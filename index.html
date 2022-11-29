@@ -39,7 +39,6 @@
     </style>
 </head>
 <body>
-    
     <div id="user_register">
         <p>Cadastro cliente</p>
         <form id="cliente">
@@ -55,6 +54,7 @@
             <label>Data</label><input type="text" name="data" id="data" value="29/11/2022 12:00">
             <label>Alerta</label><input type="text" name="alerta" id="alerta" value="4">
             <label>Alertado</label><input type="text" name="alertado" id="alertado" value="0">
+            <label>Convidados</label><input type="text" name="convidados" id="convidados" value="teste">
             <button onclick="request_f('/cadastro_compromisso?', 'POST', 'compromisso')" type="button">Submit</button>
         </form>
     </div>
@@ -79,6 +79,21 @@
         <form id="consulta">
             <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
             <button onclick="request_f('/consultar_compromissos?', 'GET', 'consulta')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="consulta_convite">
+        <p>Consultar convites</p>
+        <form id="consulta_conv">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <button onclick="request_f('/consultar_convites?', 'GET', 'consulta_conv')" type="button">Submit</button>
+        </form>
+    </div>
+    <div id="aceitar_convite">
+        <p>Aceitar convite</p>
+        <form id="aceita_conv">
+            <label>Nome</label><input type="text" name="nome" id="nome" value="teste">
+            <label>Nome Evento</label><input type="text" name="nome_evento" id="nome_evento" value="teste">
+            <button onclick="request_f('/aceitar_convite?', 'POST', 'aceita_conv')" type="button">Submit</button>
         </form>
     </div>
     <div id="messages">
