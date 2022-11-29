@@ -1,13 +1,24 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 from datetime import date, datetime
-import asyncio
+import uvicorn, asyncio, requests
 
 app = FastAPI()
 
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 STREAM_DELAY = 1
-RETRY_TIMEOUT = 15000
+RETRY_TIMEOUT = 1000
 
 clientes = [
 ]
@@ -16,19 +27,20 @@ class Compromisso(BaseModel):
     nome_evento: str
     data: str
     alerta: int
-    alertado: bool
+    alertado: int
 
 class Cliente(BaseModel):
     nome: str = ''
     compromissos: list = []
 
 @app.post('/cadastro_cliente')
-def cadastro_cliente(cliente: Cliente):
-    clientes.append(cliente)
+def cadastro_cliente(nome: str):
+    clientes.append(Cliente(nome=nome))
+
     return {"cliente adicionado": clientes[-1]}
 
 @app.post('/{nome}/cadastro_compromisso')
-def cadastrar_compromisso(nome: str, comp: Compromisso):
+def cadastro_compromisso(nome: str, comp: Compromisso):
     for c in clientes:
         if c.nome == nome:
             c.compromissos.append(comp)
@@ -68,25 +80,42 @@ def consultar_compromisso(nome : str):
 async def message_stream(nome: str, request: Request):
     def new_messages():
         for c in clientes:
-            if c.nome == nome and c.alertado == 0:
-                now = datetime.now().timestamp()
-                horario = datetime.strptime(c.data, "%d/%m/%Y %H:%M").timestamp()
-                if (horario - now)/ 60 <= c.alerta:
-                    yield "Voce tem um compromisso daqui {c.alerta} minutos"
+            if c.nome == nome:
+                for comp in c.compromissos:
+                    if comp.alertado == 0:
+                        now = datetime.now().timestamp()
+                        horario = datetime.strptime(comp.data, "%d/%m/%Y %H:%M").timestamp()
+                        if (horario - now)/ 60 <= comp.alerta:
+                            comp.alertado = 1
+                            return comp, True
+        return None, False
     async def event_generator():
         while True:
             if await request.is_disconnected():
                 break
 
             # Checks for new messages and return them to client if any
-            if new_messages():
+            c, new = new_messages()
+            if new:
                 yield {
                         "event": "new_message",
                         "id": "message_id",
                         "retry": RETRY_TIMEOUT,
-                        "data": "message_content"
+                        "data": f"Voce tem um compromisso daqui {c.alerta} minutos"
                 }
 
             await asyncio.sleep(STREAM_DELAY)
 
     return EventSourceResponse(event_generator())
+
+
+if __name__ == "__main__":
+    base_url = 'http://localhost:8000'
+    params = {'nome':'Lucas'}
+    cadastro_c = '/cadastro_cliente'
+    print(requests.post(base_url+cadastro_c, params=params).text)
+
+    cadastro_comp = f'/{params["nome"]}/cadastro_compromisso'
+    data = '{"nome_evento":"Teste", "data":"28/11/2022 21:50", "alerta":5, "alertado":0}'
+    print(requests.post(base_url+cadastro_comp, data=data).text)
+

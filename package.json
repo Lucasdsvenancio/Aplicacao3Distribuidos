@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "eventsource": "^2.0.2",
+    "serve": "^14.1.2"
+  }
+}
